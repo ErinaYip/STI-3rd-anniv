@@ -1,4 +1,3 @@
-
 /* ------------------------------------------------
     1. 实时时钟功能
 ------------------------------------------------ */
@@ -21,10 +20,11 @@ const ctx = canvas.getContext('2d');
 canvas.width = window.innerWidth;
 canvas.height = window.innerHeight;
 
-const chars = '01ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+const strArray = ['STI', '3rd', 'ANNIVERSARY', 'CELEBRATION', 'FLORANCE', 'CODEBOY', 'CHOSEB', 'ERINA', 'USER694', 'P', 'AMYDXHS'];
 const fontSize = 14;
 const columns = canvas.width / fontSize;
 const drops = Array(Math.floor(columns)).fill(1);
+const columnsText = Array(Math.floor(columns)).fill('').map(() => [...strArray].sort(() => 0.5 - Math.random()).join(' '));
 
 function drawMatrix() {
     ctx.fillStyle = 'rgba(0, 0, 0, 0.05)'; // 拖影效果
@@ -34,11 +34,14 @@ function drawMatrix() {
     ctx.font = fontSize + 'px monospace';
 
     for (let i = 0; i < drops.length; i++) {
-        const text = chars.charAt(Math.floor(Math.random() * chars.length));
+        const str = columnsText[i];
+        const text = str.charAt(drops[i] % str.length);
         ctx.fillText(text, i * fontSize, drops[i] * fontSize);
 
         if (drops[i] * fontSize > canvas.height && Math.random() > 0.975) {
             drops[i] = 0;
+            // 重新随机排列该列的字符串
+            columnsText[i] = [...strArray].sort(() => 0.5 - Math.random()).join(' ');
         }
         drops[i]++;
     }
@@ -49,6 +52,13 @@ setInterval(drawMatrix, 50);
 window.addEventListener('resize', () => {
     canvas.width = window.innerWidth;
     canvas.height = window.innerHeight;
+    const newColumns = Math.floor(canvas.width / fontSize);
+    if (newColumns > drops.length) {
+        for (let i = drops.length; i < newColumns; i++) {
+            drops.push(1);
+            columnsText.push([...strArray].sort(() => 0.5 - Math.random()).join(' '));
+        }
+    }
 });
 
 /* ------------------------------------------------
@@ -120,6 +130,9 @@ const historyDiv = document.getElementById('history');
 const termBody = document.getElementById('term-body');
 const promptSpan = document.querySelector('.command-line .prompt');
 
+const IMAGE_EXTENSIONS = ['png', 'jpg', 'jpeg', 'gif', 'webp', 'bmp', 'svg'];
+const VIDEO_EXTENSIONS = ['mp4', 'webm', 'ogg', 'mov', 'm4v'];
+
 // 可自定义的虚拟文件树（目录: type=dir，文件: type=file）
 const FILE_SYSTEM = {
     type: 'dir',
@@ -150,7 +163,13 @@ const FILE_SYSTEM = {
         },
         Pictures: {
             type: 'dir',
-            children: {}
+            children: {
+                'flf.jpg': {
+                    type: 'file',
+                    mediaType: 'image',
+                    src: './images/flf.jpg'
+                }
+            }
         },
         'notes.txt': {
             type: 'file',
@@ -219,6 +238,84 @@ function getNodeByPath(path) {
     }
 
     return node;
+}
+
+function escapeHtml(text) {
+    return String(text)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+}
+
+function getExtension(pathOrUrl) {
+    const clean = pathOrUrl.split(/[?#]/)[0];
+    const name = clean.split('/').pop() || '';
+    const dotIndex = name.lastIndexOf('.');
+    if (dotIndex < 0) {
+        return '';
+    }
+    return name.slice(dotIndex + 1).toLowerCase();
+}
+
+function inferMediaTypeFromSource(pathOrUrl) {
+    if (/^data:image\//i.test(pathOrUrl)) {
+        return 'image';
+    }
+    if (/^data:video\//i.test(pathOrUrl)) {
+        return 'video';
+    }
+
+    const ext = getExtension(pathOrUrl);
+    if (IMAGE_EXTENSIONS.includes(ext)) {
+        return 'image';
+    }
+    if (VIDEO_EXTENSIONS.includes(ext)) {
+        return 'video';
+    }
+    return null;
+}
+
+function resolveMediaTarget(rawArg) {
+    const targetPath = resolvePath(rawArg);
+    const node = getNodeByPath(targetPath);
+
+    if (node) {
+        if (node.type !== 'file') {
+            return { error: `view: ${rawArg}: Is a directory` };
+        }
+
+        const source = node.src || node.content;
+        if (!source || typeof source !== 'string') {
+            return { error: `view: ${rawArg}: Not a media file` };
+        }
+
+        const mediaType = node.mediaType || inferMediaTypeFromSource(source) || inferMediaTypeFromSource(rawArg);
+        if (!mediaType) {
+            return { error: `view: ${rawArg}: Unsupported media format` };
+        }
+
+        return { mediaType, source, label: targetPath };
+    }
+
+    const mediaType = inferMediaTypeFromSource(rawArg);
+    if (!mediaType) {
+        return { error: `view: ${rawArg}: No such file or unsupported URL format` };
+    }
+
+    return { mediaType, source: rawArg, label: rawArg };
+}
+
+function buildMediaPreviewHtml(mediaType, source, label) {
+    const safeSource = escapeHtml(source);
+    const safeLabel = escapeHtml(label);
+
+    if (mediaType === 'image') {
+        return `<div class="term-media-wrap"><div class="term-media-label">${safeLabel}</div><img class="term-media" src="${safeSource}" alt="preview"></div>`;
+    }
+
+    return `<div class="term-media-wrap"><div class="term-media-label">${safeLabel}</div><video class="term-media" src="${safeSource}" controls preload="metadata"></video></div>`;
 }
 
 function renderTree(node, prefix = '', isLast = true, name = '') {
@@ -307,6 +404,7 @@ Available commands:<br>
 <span class="c-yellow">tree</span>      Show file tree (use: tree [path])<br>
 <span class="c-yellow">cd</span>        Change directory (use: cd [path])<br>
 <span class="c-yellow">cat</span>       Show file content (use: cat &lt;file&gt;)<br>
+<span class="c-yellow">view</span>      Preview image/video (use: view &lt;file|url&gt;)<br>
 <span class="c-yellow">pwd</span>       Print current directory<br>
 <span class="c-yellow">whoami</span>    Print effective userid<br>
 <span class="c-yellow">fastfetch</span>  Show system info<br>
@@ -314,7 +412,7 @@ Available commands:<br>
             break;
         case 'clear':
             historyDiv.innerHTML = '';
-            return; // 直接返回，不添加空行
+            return;
         case 'date':
             output = new Date().toString();
             break;
@@ -392,7 +490,29 @@ Available commands:<br>
                     break;
                 }
 
+                if (typeof node.content !== 'string') {
+                    output = `cat: ${args[0]}: Binary/media file, use 'view ${args[0]}'`;
+                    break;
+                }
+
                 output = node.content.replace(/\n/g, '<br>');
+            }
+            break;
+        case 'open':
+        case 'view':
+            {
+                if (!args[0]) {
+                    output = 'view: missing file or URL';
+                    break;
+                }
+
+                const media = resolveMediaTarget(args[0]);
+                if (media.error) {
+                    output = media.error;
+                    break;
+                }
+
+                output = buildMediaPreviewHtml(media.mediaType, media.source, media.label);
             }
             break;
         case 'pwd':

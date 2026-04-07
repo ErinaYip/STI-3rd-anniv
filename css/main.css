@@ -145,3 +145,28 @@ input#cmd-input {
 .c-cyan { color: #00bcd4; }
 .c-yellow { color: #ffeb3b; }
 .ascii-art { white-space: pre; color: var(--prompt-color); font-size: 12px; line-height: 1.2; }
+
+.term-media-wrap {
+    margin-top: 6px;
+    padding: 8px;
+    border: 1px solid #2e2e2e;
+    border-radius: 6px;
+    background: rgba(255, 255, 255, 0.03);
+    max-width: 100%;
+}
+
+.term-media-label {
+    color: #9ad3ff;
+    font-size: 12px;
+    margin-bottom: 6px;
+    word-break: break-all;
+}
+
+.term-media {
+    width: 100%;
+    max-width: 560px;
+    max-height: 320px;
+    border-radius: 4px;
+    background: #000;
+    object-fit: contain;
+}
