@@ -20,17 +20,17 @@ const ctx = canvas.getContext('2d');
 canvas.width = window.innerWidth;
 canvas.height = window.innerHeight;
 
-const strArray = ['STI', '3rd', 'ANNIVERSARY', 'CELEBRATION', 'FLORANCE', 'Florance', 'CODEBOY', 'CodeBoy', 'CHOSEB', 'Chose_B', 'ERINA', 'Erina',  'USER694', 'P', 'AMYDXHS', 'TRUTHLUMING', 'TRUTHluming', 'LENZH', 'len_zh', 'Science', 'Technology', 'STI3rdAnniv', 'STI3rdAnniversary', 'STI3rd', 'Anniversary', 'STI3rdAnnivCelebration'];
+const strArray = ['STI', '3rd', 'ANNIVERSARY', 'CELEBRATION', 'FLORANCE', 'Florance', 'CODEBOY', 'CodeBoy', 'CHOSEB', 'Chose_B', 'ERINA', 'Erina', 'USER694', 'P', 'AMYDXHS', 'TRUTHLUMING', 'TRUTHluming', 'LENZH', 'len_zh', 'Science', 'Technology', 'STI3rdAnniv', 'STI3rdAnniversary', 'STI3rd', 'Anniversary', 'STI3rdAnnivCelebration'];
 const fontSize = 14;
 const columns = canvas.width / fontSize;
 const drops = Array(Math.floor(columns)).fill(1);
 const columnsText = Array(Math.floor(columns)).fill('').map(() => [...strArray].sort(() => 0.5 - Math.random()).join(' '));
 
 function drawMatrix() {
-    ctx.fillStyle = 'rgba(0, 0, 0, 0.05)'; // 拖影效果
+    ctx.fillStyle = 'rgba(0, 0, 0, 0.05)';
     ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-    ctx.fillStyle = '#0F0'; // 绿色文字
+    ctx.fillStyle = '#0F0';
     ctx.font = fontSize + 'px monospace';
 
     for (let i = 0; i < drops.length; i++) {
@@ -40,7 +40,6 @@ function drawMatrix() {
 
         if (drops[i] * fontSize > canvas.height && Math.random() > 0.975) {
             drops[i] = 0;
-            // 重新随机排列该列的字符串
             columnsText[i] = [...strArray].sort(() => 0.5 - Math.random()).join(' ');
         }
         drops[i]++;
@@ -48,13 +47,12 @@ function drawMatrix() {
 }
 setInterval(drawMatrix, 50);
 
-// 窗口大小改变时重置 Canvas
 window.addEventListener('resize', () => {
     canvas.width = window.innerWidth;
     canvas.height = window.innerHeight;
     const newColumns = Math.floor(canvas.width / fontSize);
     if (newColumns > drops.length) {
-        for (let i = drops.length; i < newColumns; i++) {
+        for (let index = drops.length; index < newColumns; index++) {
             drops.push(1);
             columnsText.push([...strArray].sort(() => 0.5 - Math.random()).join(' '));
         }
@@ -67,26 +65,25 @@ window.addEventListener('resize', () => {
 const terminal = document.getElementById('terminal');
 const header = document.getElementById('drag-header');
 
-// 移除初始的 transform，改用 top/left 定位，防止拖拽计算冲突
-// 在JS初始化时固定位置
 terminal.style.left = (window.innerWidth / 2 - 350) + 'px';
 terminal.style.top = (window.innerHeight / 2 - 225) + 'px';
 terminal.style.transform = 'none';
 
 let isDragging = false;
-let offsetX, offsetY;
+let offsetX;
+let offsetY;
 
-header.addEventListener('mousedown', (e) => {
+header.addEventListener('mousedown', (event) => {
     isDragging = true;
-    offsetX = e.clientX - terminal.offsetLeft;
-    offsetY = e.clientY - terminal.offsetTop;
+    offsetX = event.clientX - terminal.offsetLeft;
+    offsetY = event.clientY - terminal.offsetTop;
     header.style.cursor = 'grabbing';
 });
 
-document.addEventListener('mousemove', (e) => {
+document.addEventListener('mousemove', (event) => {
     if (isDragging) {
-        terminal.style.left = (e.clientX - offsetX) + 'px';
-        terminal.style.top = (e.clientY - offsetY) + 'px';
+        terminal.style.left = (event.clientX - offsetX) + 'px';
+        terminal.style.top = (event.clientY - offsetY) + 'px';
     }
 });
 
@@ -98,91 +95,49 @@ document.addEventListener('mouseup', () => {
 /* ------------------------------------------------
     4. 窗口调整大小功能
 ------------------------------------------------ */
-
 const resizer = terminal.querySelector('.term-resizer');
 let isResizing = false;
-let startWidth, startHeight, startX, startY;
-resizer.addEventListener('mousedown', (e) => {
+let startWidth;
+let startHeight;
+let startX;
+let startY;
+
+resizer.addEventListener('mousedown', (event) => {
     isResizing = true;
     startWidth = terminal.offsetWidth;
     startHeight = terminal.offsetHeight;
-    startX = e.clientX;
-    startY = e.clientY;
-    e.preventDefault(); // 防止选中文本
+    startX = event.clientX;
+    startY = event.clientY;
+    event.preventDefault();
 });
-document.addEventListener('mousemove', (e) => {
+
+document.addEventListener('mousemove', (event) => {
     if (isResizing) {
-        const newWidth = Math.max(600, startWidth + (e.clientX - startX));
-        const newHeight = Math.max(400, startHeight + (e.clientY - startY));
+        const newWidth = Math.max(600, startWidth + (event.clientX - startX));
+        const newHeight = Math.max(400, startHeight + (event.clientY - startY));
         terminal.style.width = newWidth + 'px';
         terminal.style.height = newHeight + 'px';
     }
 });
+
 document.addEventListener('mouseup', () => {
     isResizing = false;
 });
 
 /* ------------------------------------------------
-    5. 终端逻辑与命令解析
+    5. 终端逻辑与真实文件系统映射
 ------------------------------------------------ */
 const input = document.getElementById('cmd-input');
 const historyDiv = document.getElementById('history');
 const termBody = document.getElementById('term-body');
 const promptSpan = document.querySelector('.command-line .prompt');
 
+const TERMINAL_FS_ROOT = './fs';
 const IMAGE_EXTENSIONS = ['png', 'jpg', 'jpeg', 'gif', 'webp', 'bmp', 'svg'];
 const VIDEO_EXTENSIONS = ['mp4', 'webm', 'ogg', 'mov', 'm4v'];
+const TEXT_EXTENSIONS = ['txt', 'md', 'html', 'css', 'js', 'json', 'yml', 'yaml', 'xml', 'csv', 'log'];
 
-// 可自定义的虚拟文件树（目录: type=dir，文件: type=file）
-const FILE_SYSTEM = {
-    type: 'dir',
-    children: {
-        Documents: {
-            type: 'dir',
-            children: {
-                'plan.md': { type: 'file',
-                            content: '# STI 3rd Anniversary\n\n- Build demo\n- Test UI\n- Ship it'
-                        },
-                'nameOFanother.txt': { type: 'file',
-                    content: '科技楼神秘小团体'
-                }
-            }
-        },
-        Downloads: {
-            type: 'dir',
-            children: {
-                'release-notes.txt': {
-                    type: 'file',
-                    content: 'v1.0.0\n- Initial web desktop release'
-                }
-            }
-        },
-        Music: {
-            type: 'dir',
-            children: {}
-        },
-        Pictures: {
-            type: 'dir',
-            children: {
-                'flf.jpg': {
-                    type: 'file',
-                    mediaType: 'image',
-                    src: './images/flf.jpg'
-                }
-            }
-        },
-        'notes.txt': {
-            type: 'file',
-            content: 'STI\'s 3rd anniversary is coming!'
-        },
-        'README.md': {
-            type: 'file',
-            content: '#'
-        }
-    }
-};
-
-let currentPath = '/';
+let currentPath = '/home/stier';
 
 function updatePrompt() {
     promptSpan.textContent = `user@stier:${currentPath}$`;
@@ -223,23 +178,6 @@ function resolvePath(inputPath) {
     return partsToPath(baseParts);
 }
 
-function getNodeByPath(path) {
-    const parts = pathToParts(path);
-    let node = FILE_SYSTEM;
-
-    for (const part of parts) {
-        if (node.type !== 'dir') {
-            return null;
-        }
-        node = node.children[part];
-        if (!node) {
-            return null;
-        }
-    }
-
-    return node;
-}
-
 function escapeHtml(text) {
     return String(text)
         .replace(/&/g, '&amp;')
@@ -277,26 +215,103 @@ function inferMediaTypeFromSource(pathOrUrl) {
     return null;
 }
 
-function resolveMediaTarget(rawArg) {
+function isLikelyTextFile(pathOrUrl) {
+    const ext = getExtension(pathOrUrl);
+    return TEXT_EXTENSIONS.includes(ext) || !ext;
+}
+
+function toRealPath(path) {
+    return path === '/' ? TERMINAL_FS_ROOT : `${TERMINAL_FS_ROOT}${path}`;
+}
+
+function createDirectoryNode(path) {
+    return { type: 'dir', path, children: {} };
+}
+
+function createFileNode(path, source) {
+    return { type: 'file', path, source };
+}
+
+function cacheNode(path, node) {
+    fileSystemCache.set(path, node);
+    return node;
+}
+
+function populateCacheFromManifest(node, currentNodePath = '/') {
+    const normalizedNode = node.type === 'dir'
+        ? createDirectoryNode(currentNodePath)
+        : createFileNode(currentNodePath, node.source);
+
+    cacheNode(currentNodePath, normalizedNode);
+
+    if (node.type !== 'dir') {
+        return normalizedNode;
+    }
+
+    const children = {};
+    const manifestChildren = node.children || {};
+
+    Object.keys(manifestChildren).forEach((name) => {
+        const childPath = currentNodePath === '/' ? `/${name}` : `${currentNodePath}/${name}`;
+        children[name] = populateCacheFromManifest(manifestChildren[name], childPath);
+    });
+
+    normalizedNode.children = children;
+    return normalizedNode;
+}
+
+async function ensureFileSystemReady() {
+    if (!fileSystemReadyPromise) {
+        fileSystemReadyPromise = fetch(`${TERMINAL_FS_ROOT}/index.json`, { cache: 'no-store' })
+            .then((response) => {
+                if (!response.ok) {
+                    throw new Error('Unable to load /fs/index.json');
+                }
+                return response.json();
+            })
+            .then((manifest) => {
+                fileSystemCache.clear();
+                populateCacheFromManifest(manifest, '/');
+            });
+    }
+
+    return fileSystemReadyPromise;
+}
+
+async function getNodeByPath(path) {
+    await ensureFileSystemReady();
+    return fileSystemCache.get(path) || null;
+}
+
+async function readTextFile(path) {
+    const node = await getNodeByPath(path);
+    if (!node || node.type !== 'file') {
+        return null;
+    }
+
+    const response = await fetch(node.source, { cache: 'no-store' });
+    if (!response.ok) {
+        throw new Error(`Unable to read file: ${path}`);
+    }
+
+    return response.text();
+}
+
+async function resolveMediaTarget(rawArg) {
     const targetPath = resolvePath(rawArg);
-    const node = getNodeByPath(targetPath);
+    const node = await getNodeByPath(targetPath);
 
     if (node) {
         if (node.type !== 'file') {
             return { error: `view: ${rawArg}: Is a directory` };
         }
 
-        const source = node.src || node.content;
-        if (!source || typeof source !== 'string') {
-            return { error: `view: ${rawArg}: Not a media file` };
-        }
-
-        const mediaType = node.mediaType || inferMediaTypeFromSource(source) || inferMediaTypeFromSource(rawArg);
+        const mediaType = inferMediaTypeFromSource(node.source) || inferMediaTypeFromSource(rawArg);
         if (!mediaType) {
             return { error: `view: ${rawArg}: Unsupported media format` };
         }
 
-        return { mediaType, source, label: targetPath };
+        return { mediaType, source: node.source, label: targetPath };
     }
 
     const mediaType = inferMediaTypeFromSource(rawArg);
@@ -323,7 +338,7 @@ function renderTree(node, prefix = '', isLast = true, name = '') {
 
     if (name) {
         const connector = isLast ? '└── ' : '├── ';
-        const coloredName = node.type === 'dir' ? `<span class="c-cyan">${name}</span>` : name;
+        const coloredName = node.type === 'dir' ? `<span class="c-cyan">${escapeHtml(name)}</span>` : escapeHtml(name);
         lines.push(`${prefix}${connector}${coloredName}`);
     }
 
@@ -331,7 +346,7 @@ function renderTree(node, prefix = '', isLast = true, name = '') {
         return lines;
     }
 
-    const childNames = Object.keys(node.children).sort((a, b) => a.localeCompare(b));
+    const childNames = Object.keys(node.children).sort((left, right) => left.localeCompare(right));
     const nextPrefix = name ? `${prefix}${isLast ? '    ' : '│   '}` : prefix;
 
     childNames.forEach((childName, index) => {
@@ -343,9 +358,20 @@ function renderTree(node, prefix = '', isLast = true, name = '') {
     return lines;
 }
 
+function appendOutput(html) {
+    if (!html) {
+        return;
+    }
+
+    const responseLine = document.createElement('div');
+    responseLine.className = 'output-line';
+    responseLine.innerHTML = html;
+    historyDiv.appendChild(responseLine);
+    termBody.scrollTop = termBody.scrollHeight;
+}
+
 updatePrompt();
 
-// ASCII Art Logo
 const fastfetchArt = `
 <span class="c-cyan">         __ </span>  <span class="c-green">user@stier</span>
 <span class="c-cyan">        / / </span>  --------------
@@ -386,27 +412,40 @@ input.addEventListener('keydown', function(e) {
         this.value = '';
         termBody.scrollTop = termBody.scrollHeight;
     }
+
+    const cmd = this.value.trim();
+    const userLine = document.createElement('div');
+    userLine.className = 'output-line';
+    userLine.innerHTML = `<span class="prompt">stier@stier:${currentPath}$</span><span class="user-input">${escapeHtml(cmd)}</span>`;
+    historyDiv.appendChild(userLine);
+
+    this.value = '';
+    termBody.scrollTop = termBody.scrollHeight;
+
+    await processCommand(cmd);
+    termBody.scrollTop = termBody.scrollHeight;
 });
 
-function processCommand(cmd) {
+async function processCommand(cmd) {
     let output = '';
     const [command, ...args] = cmd.split(/\s+/);
     const normalizedCommand = (command || '').toLowerCase();
 
-    switch(normalizedCommand) {
-        case 'help':
-            output = `
+    try {
+        switch(normalizedCommand) {
+            case 'help':
+                output = `
 Available commands:<br>
-<span class="c-yellow">help</span>      Show this help message<br>
-<span class="c-yellow">clear</span>     Clear the terminal screen<br>
-<span class="c-yellow">date</span>      Show current date and time<br>
-<span class="c-yellow">ls</span>        List directory contents<br>
-<span class="c-yellow">tree</span>      Show file tree (use: tree [path])<br>
-<span class="c-yellow">cd</span>        Change directory (use: cd [path])<br>
-<span class="c-yellow">cat</span>       Show file content (use: cat &lt;file&gt;)<br>
-<span class="c-yellow">view</span>      Preview image/video (use: view &lt;file|url&gt;)<br>
-<span class="c-yellow">pwd</span>       Print current directory<br>
-<span class="c-yellow">whoami</span>    Print effective userid<br>
+<span class="c-yellow">help</span>       Show this help message<br>
+<span class="c-yellow">clear</span>      Clear the terminal screen<br>
+<span class="c-yellow">date</span>       Show current date and time<br>
+<span class="c-yellow">ls</span>         List directory contents<br>
+<span class="c-yellow">tree</span>       Show file tree (use: tree [path])<br>
+<span class="c-yellow">cd</span>         Change directory (use: cd [path])<br>
+<span class="c-yellow">cat</span>        Show file content (use: cat &lt;file&gt;)<br>
+<span class="c-yellow">view</span>       Preview image/video (use: view &lt;file|url&gt;)<br>
+<span class="c-yellow">pwd</span>        Print current directory<br>
+<span class="c-yellow">whoami</span>     Print effective userid<br>
 <span class="c-yellow">fastfetch</span>  Show system info<br>
 <span class="c-yellow">reboot</span>    Reload the page<br>`;
             break;
@@ -484,65 +523,119 @@ Available commands:<br>
                     output = `cat: ${args[0]}: No such file or directory`;
                     break;
                 }
+                break;
+            case 'tree':
+                {
+                    const targetPath = resolvePath(args[0] || '.');
+                    const node = await getNodeByPath(targetPath);
 
-                if (node.type !== 'file') {
-                    output = `cat: ${args[0]}: Is a directory`;
-                    break;
+                    if (!node) {
+                        output = `tree: cannot access '${escapeHtml(args[0] || '.')}': No such file or directory`;
+                        break;
+                    }
+
+                    if (node.type !== 'dir') {
+                        output = escapeHtml(args[0] || targetPath);
+                        break;
+                    }
+
+                    const title = targetPath === '/'
+                        ? '<span class="c-cyan">/</span>'
+                        : `<span class="c-cyan">${escapeHtml(targetPath)}</span>`;
+                    const treeLines = renderTree(node);
+                    output = treeLines.length ? `${title}<br>${treeLines.join('<br>')}` : title;
                 }
+                break;
+            case 'cd':
+                {
+                    const targetPath = resolvePath(args[0] || '/');
+                    const node = await getNodeByPath(targetPath);
 
-                if (typeof node.content !== 'string') {
-                    output = `cat: ${args[0]}: Binary/media file, use 'view ${args[0]}'`;
-                    break;
+                    if (!node) {
+                        output = `cd: ${escapeHtml(args[0] || '')}: No such file or directory`;
+                        break;
+                    }
+
+                    if (node.type !== 'dir') {
+                        output = `cd: ${escapeHtml(args[0] || '')}: Not a directory`;
+                        break;
+                    }
+
+                    currentPath = targetPath;
+                    updatePrompt();
                 }
+                break;
+            case 'cat':
+                {
+                    if (!args[0]) {
+                        output = 'cat: missing file operand';
+                        break;
+                    }
 
-                output = node.content.replace(/\n/g, '<br>');
-            }
-            break;
-        case 'open':
-        case 'view':
-            {
-                if (!args[0]) {
-                    output = 'view: missing file or URL';
-                    break;
+                    const targetPath = resolvePath(args[0]);
+                    const node = await getNodeByPath(targetPath);
+
+                    if (!node) {
+                        output = `cat: ${escapeHtml(args[0])}: No such file or directory`;
+                        break;
+                    }
+
+                    if (node.type !== 'file') {
+                        output = `cat: ${escapeHtml(args[0])}: Is a directory`;
+                        break;
+                    }
+
+                    if (inferMediaTypeFromSource(node.source) || !isLikelyTextFile(node.source)) {
+                        output = `cat: ${escapeHtml(args[0])}: Binary/media file, use 'view ${escapeHtml(args[0])}'`;
+                        break;
+                    }
+
+                    const textContent = await readTextFile(targetPath);
+                    output = escapeHtml(textContent).replace(/\n/g, '<br>');
                 }
+                break;
+            case 'open':
+            case 'view':
+                {
+                    if (!args[0]) {
+                        output = 'view: missing file or URL';
+                        break;
+                    }
 
-                const media = resolveMediaTarget(args[0]);
-                if (media.error) {
-                    output = media.error;
-                    break;
+                    const media = await resolveMediaTarget(args[0]);
+                    if (media.error) {
+                        output = media.error;
+                        break;
+                    }
+
+                    output = buildMediaPreviewHtml(media.mediaType, media.source, media.label);
                 }
-
-                output = buildMediaPreviewHtml(media.mediaType, media.source, media.label);
-            }
-            break;
-        case 'pwd':
-            output = currentPath;
-            break;
-        case 'fastfetch':
-            output = `<div class="ascii-art">${fastfetchArt}</div>`;
-            break;
-        case 'reboot':
-            output = 'Rebooting system...';
-            setTimeout(() => location.reload(), 1000);
-            break;
-        case '':
-            return;
-        default:
-            output = `bash: ${command}: command not found`;
+                break;
+            case 'pwd':
+                output = currentPath;
+                break;
+            case 'fastfetch':
+                output = `<div class="ascii-art">${fastfetchArt}</div>`;
+                break;
+            case 'reboot':
+                output = 'Rebooting system...';
+                appendOutput(output);
+                setTimeout(() => location.reload(), 1000);
+                return;
+            case '':
+                return;
+            default:
+                output = `bash: ${escapeHtml(command)}: command not found`;
+        }
+    } catch (error) {
+        output = `error: ${escapeHtml(error.message || 'Unknown error')}`;
     }
 
-    if (output) {
-        const responseLine = document.createElement('div');
-        responseLine.className = 'output-line';
-        responseLine.innerHTML = output;
-        historyDiv.appendChild(responseLine);
-    }
+    appendOutput(output);
 }
 
-// 保持输入框聚焦
 document.addEventListener('click', () => {
-        // 只有当用户没有选中文本时才强制聚焦，方便用户复制
-    if(window.getSelection().toString() === "") {
+    if (window.getSelection().toString() === '') {
         input.focus();
     }
 });

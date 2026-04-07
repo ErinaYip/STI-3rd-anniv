@@ -1,0 +1,9 @@
+{
+  "name": "sti-3rd-anniv",
+  "private": true,
+  "scripts": {
+    "build:fs": "node scripts/generate-fs-index.js",
+    "serve": "python3 -m http.server 8000",
+    "start": "npm run build:fs && npm run serve"
+  }
+}

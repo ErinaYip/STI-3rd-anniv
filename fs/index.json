@@ -1,0 +1,54 @@
+{
+  "type": "dir",
+  "children": {
+    "home": {
+      "type": "dir",
+      "children": {
+        "stier": {
+          "type": "dir",
+          "children": {
+            "Documents": {
+              "type": "dir",
+              "children": {
+                "nameOFanother.txt": {
+                  "type": "file",
+                  "source": "./fs/home/stier/Documents/nameOFanother.txt"
+                },
+                "plan.md": {
+                  "type": "file",
+                  "source": "./fs/home/stier/Documents/plan.md"
+                }
+              }
+            },
+            "Downloads": {
+              "type": "dir",
+              "children": {
+                "release-notes.txt": {
+                  "type": "file",
+                  "source": "./fs/home/stier/Downloads/release-notes.txt"
+                }
+              }
+            },
+            "Music": {
+              "type": "dir",
+              "children": {}
+            },
+            "notes.txt": {
+              "type": "file",
+              "source": "./fs/home/stier/notes.txt"
+            },
+            "Pictures": {
+              "type": "dir",
+              "children": {
+                "flf.jpg": {
+                  "type": "file",
+                  "source": "./fs/home/stier/Pictures/flf.jpg"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}
