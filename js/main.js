@@ -20,7 +20,7 @@ const ctx = canvas.getContext('2d');
 canvas.width = window.innerWidth;
 canvas.height = window.innerHeight;
 
-const strArray = ['STI', '3rd', 'ANNIVERSARY', 'CELEBRATION', 'FLORANCE', 'CODEBOY', 'CHOSEB', 'ERINA', 'USER694', 'P', 'AMYDXHS'];
+const strArray = ['STI', '3rd', 'ANNIVERSARY', 'CELEBRATION', 'FLORANCE', 'Florance', 'CODEBOY', 'CodeBoy', 'CHOSEB', 'Chose_B', 'ERINA', 'Erina',  'USER694', 'P', 'AMYDXHS', 'TRUTHLUMING', 'TRUTHluming', 'LENZH', 'len_zh', 'Science', 'Technology', 'STI3rdAnniv', 'STI3rdAnniversary', 'STI3rd', 'Anniversary', 'STI3rdAnnivCelebration'];
 const fontSize = 14;
 const columns = canvas.width / fontSize;
 const drops = Array(Math.floor(columns)).fill(1);
@@ -112,8 +112,8 @@ resizer.addEventListener('mousedown', (e) => {
 });
 document.addEventListener('mousemove', (e) => {
     if (isResizing) {
-        const newWidth = startWidth + (e.clientX - startX);
-        const newHeight = startHeight + (e.clientY - startY);
+        const newWidth = Math.max(600, startWidth + (e.clientX - startX));
+        const newHeight = Math.max(400, startHeight + (e.clientY - startY));
         terminal.style.width = newWidth + 'px';
         terminal.style.height = newHeight + 'px';
     }
@@ -173,11 +173,7 @@ const FILE_SYSTEM = {
         },
         'notes.txt': {
             type: 'file',
-            content: 'Remember to update README before release.'
-        },
-        'script.js': {
-            type: 'file',
-            content: 'console.log("STI desktop boot");'
+            content: 'STI\'s 3rd anniversary is coming!'
         }
     }
 };
@@ -352,11 +348,11 @@ const fastfetchArt = `
 <span class="c-cyan">       / /  </span>  <span class="c-yellow">OS</span>: HTML5 Web Desktop
 <span class="c-cyan">      / /   </span>  <span class="c-yellow">Kernel</span>: Browser Engine
 <span class="c-cyan">     / /    </span>  <span class="c-yellow">Uptime</span>: Just now
-<span class="c-cyan">    /  \\    </span>  <span class="c-yellow">Shell</span>: JS-Bash
+<span class="c-cyan">    /  \\    </span>  <span class="c-yellow">Pubtime</span>: Apr 26, 2023
 <span class="c-cyan">   /    \\   </span>  <span class="c-yellow">Resolution</span>: ${window.innerWidth}x${window.innerHeight}
 <span class="c-cyan">  / | |\\ \\  </span>  <span class="c-yellow">Memory</span>: Simulated 100%
-<span class="c-cyan"> / /| | \\ \\ </span>
-<span class="c-cyan">| | | | / / </span>
+<span class="c-cyan"> / /| | \\ \\ </span>  <span class="c-yellow">CPU</span>: Simulated 100%
+<span class="c-cyan">| | | | / / </span>  <span class="c-yellow">Shell</span>: JS-Bash
 <span class="c-cyan">| | | |/ /  </span>
 <span class="c-cyan">| | |   /   </span>
 <span class="c-cyan">| | | | \\   </span>
@@ -376,7 +372,7 @@ input.addEventListener('keydown', function(e) {
         // 1. 添加用户的输入历史
         const userLine = document.createElement('div');
         userLine.className = 'output-line';
-        userLine.innerHTML = `<span class="prompt">root@stier:${currentPath}$</span> ${cmd}`;
+        userLine.innerHTML = `<span class="prompt">root@stier:${currentPath}$</span><span class="user-input">${escapeHtml(cmd)}</span>`;
         historyDiv.appendChild(userLine);
 
         // 2. 处理命令

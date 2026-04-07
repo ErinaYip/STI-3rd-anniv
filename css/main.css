@@ -80,20 +80,6 @@ body {
     border-bottom: 1px solid #333;
 }
 
-.window-controls {
-    display: flex;
-    gap: 8px;
-}
-
-.dot {
-    width: 12px;
-    height: 12px;
-    border-radius: 50%;
-}
-.red { background: #ff5f56; }
-.yellow { background: #ffbd2e; }
-.green { background: #27c93f; }
-
 .term-title {
     margin-left: 20px;
     color: #aaa;
@@ -108,6 +94,7 @@ body {
     color: var(--white);
     font-size: 15px;
     cursor: text;
+    user-select: text; /* 允许复制内容 */
 }
 .term-resizer {
     position: absolute;
@@ -130,9 +117,16 @@ body {
 .command-line { display: flex; align-items: center; }
 .prompt { color: var(--prompt-color); margin-right: 8px; font-weight: bold; }
 
+.user-input {
+    color: var(--white);
+    font-family: var(--font-stack);
+    font-size: 15px;
+}
+
 input#cmd-input {
     background: transparent;
     border: none;
+    padding: 1px 0;
     color: var(--white);
     font-family: var(--font-stack);
     font-size: 15px;
